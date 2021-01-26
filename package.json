@@ -10,14 +10,22 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:switcheroo.helloWorld"
+        "onCommand:switcheroo.toggleBetweenTestAndSourceFile"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "switcheroo.helloWorld",
-				"title": "Hello World"
+				"command": "switcheroo.toggleBetweenTestAndSourceFile",
+				"title": "Toggle between test and source file"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "switcheroo.toggleBetweenTestAndSourceFile",
+				"key": "ctrl+shift+t",
+				"mac": "cmd+shift+t",
+				"when": "editorFocus"
 			}
 		]
 	},

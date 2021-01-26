@@ -1,27 +1,71 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { ExtensionContext, GlobPattern, TextEditor, Uri } from 'vscode';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+const testFileExtension = '.spec.ts';
+const sourceFileExtension = '.ts';
+const sourceFileFolder = 'src';
+const testFileFolder = 'src/test';
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "switcheroo" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('switcheroo.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from switcheroo!');
-	});
-
+export function activate(context: ExtensionContext) {
+	const disposable = vscode.commands.registerCommand('switcheroo.toggleBetweenTestAndSourceFile', toggleBetweenTestAndSourceFile);
 	context.subscriptions.push(disposable);
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {}
+
+async function toggleBetweenTestAndSourceFile() {
+	const activeFile = vscode.window.activeTextEditor?.document.uri;
+	if (!activeFile) {
+		vscode.window.showErrorMessage('No source file opened. Please open a file in order to use the command.');
+		return;
+	}
+
+	if (isTestFile(activeFile)) {
+		switchToSourceFileFrom(activeFile);
+	} else {
+		switchToTestFileFrom(activeFile);
+	}
+}
+
+async function switchToTestFileFrom(sourceFile: Uri) {
+	const matchingTestFile = await findFileWithExtension(extractFileNameWithoutExtension(sourceFile), `**/${testFileFolder}/*${testFileExtension}`);
+	if (!matchingTestFile) {
+		vscode.window.showErrorMessage(`Could not find any matching test file. Please make sure a test file for ${extractFileName(sourceFile)} exists.`);
+		return;
+	}
+
+	await openTextDocument(matchingTestFile);
+}
+
+async function switchToSourceFileFrom(testFile: Uri) {
+	const matchingSourceFile = await findFileWithExtension(extractFileNameWithoutExtension(testFile), `**/${sourceFileFolder}/*${sourceFileExtension}`);
+	if (!matchingSourceFile) {
+		vscode.window.showErrorMessage(`Could not find any matching source file. Please make sure a source file for ${extractFileName(testFile)} exists.`);
+		return;
+	}
+	await openTextDocument(matchingSourceFile);
+}
+
+async function findFileWithExtension(fileName: string, fileGlobPattern: GlobPattern): Promise<Uri | undefined> {
+	const files = await vscode.workspace.findFiles(fileGlobPattern, `**/node_modules/**`);
+	return files.find(file => extractFileNameWithoutExtension(file) === fileName);
+}
+ 
+async function openTextDocument(file: Uri): Promise<TextEditor> {
+	console.log('Switching to', file);
+	const document = await vscode.workspace.openTextDocument(file);
+	return vscode.window.showTextDocument(document);
+}
+
+function isTestFile(file: Uri): boolean {
+	return file.toString().endsWith(testFileExtension);
+}
+
+function extractFileNameWithoutExtension(path: Uri): string {
+	const fileNameWithExtension = path.toString().split('/').pop() || path.toString();
+	return fileNameWithExtension.split('.')[0];
+}
+
+function extractFileName(path: Uri): string {
+	return path.toString().split('/').pop() || path.toString();
+}
