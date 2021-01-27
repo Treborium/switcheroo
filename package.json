@@ -3,8 +3,9 @@
 	"displayName": "switcheroo",
 	"description": "Easily switch between source and test files",
 	"version": "0.0.1",
-	"publisher": "Robert Fuchs",
+	"publisher": "treborium",
 	"repository": "https://github.com/Treborium/switcheroo",
+	"license": "GPL-3.0-or-later",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
